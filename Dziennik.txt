@@ -6,3 +6,4 @@
 3. Utworzenie domeny testowej i certyfikatu  
 4. Postawienie VPN  
 5. Zbudowanie i uruchomienie frontend i backend
+6. Aduyt rozwiązań na tablet (apliakcje do kiosku)
