@@ -1,0 +1,8 @@
+# Dziennik
+
+## 05.10.2025
+1. Doprecyzowanie wymagań projektu  
+2. Uruchomienie serwera testowego  
+3. Utworzenie domeny testowej i certyfikatu  
+4. Postawienie VPN  
+5. Zbudowanie i uruchomienie frontend i backend
