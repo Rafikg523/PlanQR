@@ -10,15 +10,17 @@ namespace Persistence
         {
             // Set the base path to the API directory
             var basePath = Path.Combine(Directory.GetParent(Directory.GetCurrentDirectory())?.FullName ?? Directory.GetCurrentDirectory(), "API");
+            Console.WriteLine($"DEBUG: CurrentDir: {Directory.GetCurrentDirectory()}");
+            Console.WriteLine($"DEBUG: BasePath: {basePath}");
 
             var configuration = new ConfigurationBuilder()
                 .SetBasePath(basePath)
-                .AddJsonFile("appsettings.Development.json")
+                .AddJsonFile("appsettings.json")
                 .Build();
 
             var optionsBuilder = new DbContextOptionsBuilder<DataContext>();
             var connectionString = configuration.GetConnectionString("DefaultConnection");
-            optionsBuilder.UseSqlite(connectionString);
+            optionsBuilder.UseNpgsql(connectionString);
 
             return new DataContext(optionsBuilder.Options);
         }
