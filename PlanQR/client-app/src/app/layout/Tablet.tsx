@@ -2,6 +2,7 @@ import { useEffect, useState, useRef } from 'react';
 import { useParams, useLocation } from 'react-router-dom';
 import './Tablet.css';
 import { fetchMessages } from '../services/messageService';
+import { getStatus } from '../services/registryService';
 import LogoZUT from '../../assets/ZUT_Logo.png';
 import { QRCodeCanvas } from 'qrcode.react';
 
@@ -42,6 +43,7 @@ export default function Tablet() {
 
   const [isValid, setIsValid] = useState<boolean | null>(null); // Stan do przechowywania wyniku walidacji
   const [error, setError] = useState<string | null>(null);
+  const [deviceId, setDeviceId] = useState<string | null>(null);
 
   useEffect(() => {
     const validateRoomAndSecretUrl = async () => {
@@ -58,6 +60,9 @@ export default function Tablet() {
 
         const data = await response.json();
         console.log('Walidacja zakończona sukcesem:', data);
+        if (data.device && data.device.deviceId) {
+          setDeviceId(data.device.deviceId);
+        }
         setIsValid(true);
       } catch (err: any) {
         console.error('Błąd podczas walidacji:', err.message);
@@ -70,6 +75,32 @@ export default function Tablet() {
       validateRoomAndSecretUrl();
     }
   }, [room, secretUrl]);
+
+  useEffect(() => {
+    if (!deviceId) return;
+
+    const checkStatus = async () => {
+      try {
+        const status = await getStatus(deviceId);
+
+        if (status.status === 'unregistered' || status.status === 'pending') {
+          window.location.href = '/registry';
+          return;
+        }
+
+        if (status.status === 'assigned') {
+          if (status.roomName !== room || status.secretKey !== secretUrl) {
+            window.location.href = `/tablet/${encodeURIComponent(status.roomName || '')}/${status.secretKey}`;
+          }
+        }
+      } catch (error) {
+        console.error("Error checking device status:", error);
+      }
+    };
+
+    const interval = setInterval(checkStatus, 10000); // Check every 10 seconds
+    return () => clearInterval(interval);
+  }, [deviceId, room, secretUrl]);
 
   if (isValid === false) {
     throw new Error('Nie znaleziono urządzenia z podanym room i secretUrl.');
@@ -413,7 +444,7 @@ export default function Tablet() {
               </div>
               <div className='qrcode'>
                 <QRCodeCanvas
-                  value={siteUrl + `/tablet/${encodeURIComponent(room || '')}/${secretUrl}`}
+                  value={`https://plan.zut.edu.pl/schedule.php?kind=room&name=${encodeURIComponent(room || '')}`}
                   size={100}
                   style={{ width: '100%', height: 'auto' }}
                 />

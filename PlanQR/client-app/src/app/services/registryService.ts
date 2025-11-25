@@ -38,12 +38,34 @@ export const assignRoom = async (code: string, roomName: string) => {
 
 export const getPendingRequests = async () => {
     const response = await fetch(`${API_URL}/admin/requests`);
-    if (!response.ok) throw new Error("Failed to fetch requests");
+    return await response.json();
+};
+
+export const getPairedDevices = async () => {
+    const response = await fetch(`${API_URL}/admin/devices`);
+    if (!response.ok) throw new Error("Failed to fetch paired devices");
     return await response.json();
 };
 
 export const getRooms = async () => {
     const response = await fetch(`${API_URL}/rooms`);
     if (!response.ok) throw new Error("Failed to fetch rooms");
+    return await response.json();
+};
+
+export const unpairDevice = async (deviceId: string) => {
+    const response = await fetch(`${API_URL}/admin/unpair/${deviceId}`, {
+        method: "DELETE",
+    });
+    if (!response.ok) throw new Error("Failed to unpair device");
+};
+
+export const updateDeviceAssignment = async (deviceId: string, roomName: string) => {
+    const response = await fetch(`${API_URL}/admin/update`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ deviceId, roomName }),
+    });
+    if (!response.ok) throw new Error("Failed to update assignment");
     return await response.json();
 };

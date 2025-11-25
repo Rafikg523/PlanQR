@@ -164,6 +164,27 @@ namespace API.Controllers
 
             return Ok(requests);
         }
+
+        // GET /api/registry/admin/devices
+        [HttpGet("admin/devices")]
+        public async Task<IActionResult> GetPairedDevices()
+        {
+            var assignments = await _context.DeviceAssignments
+                .Include(a => a.Device)
+                .Include(a => a.Room)
+                .Select(a => new
+                {
+                    a.Id,
+                    a.DeviceId,
+                    a.RoomId,
+                    RoomName = a.Room.Name,
+                    Device = new { a.Device.Manufacturer, a.Device.Model },
+                    AssignedAt = DateTime.UtcNow // We might want to add an AssignedAt field to the entity later, for now just returning something or omitting
+                })
+                .ToListAsync();
+
+            return Ok(assignments);
+        }
         
         // GET /api/registry/rooms (Helper for admin)
         [HttpGet("rooms")]
@@ -182,6 +203,49 @@ namespace API.Controllers
             await _context.SaveChangesAsync();
             return Ok(room);
         }
+        // DELETE /api/registry/admin/unpair/{deviceId}
+        [HttpDelete("admin/unpair/{deviceId}")]
+        public async Task<IActionResult> Unpair(Guid deviceId)
+        {
+            var assignment = await _context.DeviceAssignments.FirstOrDefaultAsync(a => a.DeviceId == deviceId);
+            if (assignment == null) return NotFound();
+
+            _context.DeviceAssignments.Remove(assignment);
+            await _context.SaveChangesAsync();
+
+            return Ok();
+        }
+
+        // PUT /api/registry/admin/update
+        [HttpPut("admin/update")]
+        public async Task<IActionResult> UpdateAssignment([FromBody] UpdateAssignmentDto dto)
+        {
+            var assignment = await _context.DeviceAssignments
+                .Include(a => a.Room)
+                .FirstOrDefaultAsync(a => a.DeviceId == dto.DeviceId);
+
+            if (assignment == null) return NotFound("Device not paired.");
+
+            if (assignment.Room.Name != dto.RoomName)
+            {
+                var room = await _context.Rooms.FirstOrDefaultAsync(r => r.Name == dto.RoomName);
+                if (room == null)
+                {
+                    room = new Room { Id = Guid.NewGuid(), Name = dto.RoomName };
+                    _context.Rooms.Add(room);
+                }
+                assignment.Room = room;
+                await _context.SaveChangesAsync();
+            }
+
+            return Ok(new { status = "updated", roomName = dto.RoomName });
+        }
+    }
+
+    public class UpdateAssignmentDto
+    {
+        public Guid DeviceId { get; set; }
+        public string RoomName { get; set; }
     }
 
     public class RegisterDto

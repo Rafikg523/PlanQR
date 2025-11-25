@@ -111,6 +111,7 @@ namespace API.Controllers
                 return Ok(new { 
                     message = "Urządzenie znalezione.", 
                     device = new {
+                        deviceId = assignment.DeviceId,
                         deviceName = $"{assignment.Device.Manufacturer} {assignment.Device.Model}",
                         deviceClassroom = assignment.Room.Name,
                         deviceURL = assignment.SecretKey
