@@ -20,13 +20,13 @@ namespace API.Controllers
         [HttpGet]
         public async Task<ActionResult<IEnumerable<DeviceList>>> GetDevices()
         {
-            return await _context.DeviceLists.ToListAsync(); // Updated to match DbSet name
+            return await _context.DeviceLists.ToListAsync();
         }
 
         [HttpGet("{id}")]
         public async Task<ActionResult<DeviceList>> GetDevice(int id)
         {
-            var device = await _context.DeviceLists.FindAsync(id); // Updated to match DbSet name
+            var device = await _context.DeviceLists.FindAsync(id);
             if (device == null)
                 return NotFound();
 
@@ -36,26 +36,26 @@ namespace API.Controllers
         [HttpPost]
         public async Task<ActionResult<DeviceList>> CreateDevice([FromBody] CreateDeviceDto dto)
         {
-            var urlSource = $"{dto.deviceName}_{dto.deviceClassroom.ToUpper()}"; // Zamiana deviceClassroom na wielkie litery
+            var urlSource = $"{dto.deviceName}_{dto.deviceClassroom.ToUpper()}";
             var base64Url = Convert.ToBase64String(Encoding.UTF8.GetBytes(urlSource));
 
             var device = new DeviceList
             {
-                deviceName = dto.deviceName, // Bez zmian
-                deviceClassroom = dto.deviceClassroom.ToUpper(), // Zamiana na wielkie litery
-                deviceURL = base64Url // Bez zmian
+                deviceName = dto.deviceName,
+                deviceClassroom = dto.deviceClassroom.ToUpper(),
+                deviceURL = base64Url
             };
 
-            _context.DeviceLists.Add(device); // Dodanie do bazy danych
+            _context.DeviceLists.Add(device);
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction(nameof(GetDevice), new { id = device.id }, device); // Zwrócenie utworzonego urządzenia
+            return CreatedAtAction(nameof(GetDevice), new { id = device.id }, device);
         }
 
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateDevice(int id, [FromBody] DeviceList updatedDevice)
         {
-            if (id != updatedDevice.id) // Updated to match camelCase property names
+            if (id != updatedDevice.id)
                 return BadRequest();
 
             _context.Entry(updatedDevice).State = EntityState.Modified;
@@ -66,7 +66,7 @@ namespace API.Controllers
             }
             catch (DbUpdateConcurrencyException)
             {
-                if (!_context.DeviceLists.Any(e => e.id == id)) // Updated to match DbSet name and camelCase property names
+                if (!_context.DeviceLists.Any(e => e.id == id))
                     return NotFound();
                 else
                     throw;
@@ -78,11 +78,11 @@ namespace API.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteDevice(int id)
         {
-            var device = await _context.DeviceLists.FindAsync(id); // Updated to match DbSet name
+            var device = await _context.DeviceLists.FindAsync(id);
             if (device == null)
                 return NotFound();
 
-            _context.DeviceLists.Remove(device); // Updated to match DbSet name
+            _context.DeviceLists.Remove(device);
             await _context.SaveChangesAsync();
 
             return NoContent();
@@ -91,15 +91,34 @@ namespace API.Controllers
         [HttpGet("validate")]
         public async Task<IActionResult> ValidateRoomAndSecretUrl([FromQuery] string room, [FromQuery] string secretUrl)
         {
+            // 1. Check legacy DeviceLists table
             var device = await _context.DeviceLists
                 .FirstOrDefaultAsync(d => d.deviceClassroom == room && d.deviceURL == secretUrl);
 
-            if (device == null)
+            if (device != null)
             {
-                return NotFound(new { message = "Nie znaleziono urządzenia z podanym room i secretUrl." });
+                return Ok(new { message = "Urządzenie znalezione (legacy).", device });
             }
 
-            return Ok(new { message = "Urządzenie znalezione.", device });
+            // 2. Check new DeviceAssignments table
+            var assignment = await _context.DeviceAssignments
+                .Include(a => a.Room)
+                .Include(a => a.Device)
+                .FirstOrDefaultAsync(a => a.Room.Name == room && a.SecretKey == secretUrl);
+
+            if (assignment != null)
+            {
+                return Ok(new { 
+                    message = "Urządzenie znalezione.", 
+                    device = new {
+                        deviceName = $"{assignment.Device.Manufacturer} {assignment.Device.Model}",
+                        deviceClassroom = assignment.Room.Name,
+                        deviceURL = assignment.SecretKey
+                    }
+                });
+            }
+
+            return NotFound(new { message = "Nie znaleziono urządzenia z podanym room i secretUrl." });
         }
     }
 }

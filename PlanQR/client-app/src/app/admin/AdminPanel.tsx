@@ -6,7 +6,7 @@ import { allowedLogins } from './adminConfig.ts';
 
 const AdminPanel = () => {
   const siteUrl = import.meta.env.VITE_SITE_URL;
-  
+
   const [login, setLogin] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true); // Dodano stan ładowania
   const navigate = useNavigate();

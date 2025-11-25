@@ -1,4 +1,4 @@
-import "../layout/style.css"; 
+import "../layout/style.css";
 import logo from "../../assets/ZUT_Logo.png";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
@@ -11,31 +11,31 @@ export default function LoginPanel() {
   const navigate = useNavigate();
 
   useEffect(() => {
-      const checkLoginStatus = async () => {
-        try {
-          // const token = localStorage.getItem("token");
-          // if (!token) {
-          //   // console.log("User is unauthorized (token is NULL)");
-          //   return;
-          // }
-          const response = await fetch(siteUrl + ':5000/api/auth/check-login', {
-            method: 'GET',
-            credentials: 'include',
-          });
-          if(response.ok){
-            const data = await response.json();
-            const { givenName, surname } = data;
-            const fullName = `${surname} ${givenName}`;
-            const encodedFullName = encodeURIComponent(fullName);
-            navigate(`/LecturerPlan/${encodedFullName}`);
-          }
-        } catch (error) {
-            console.log(error);
+    const checkLoginStatus = async () => {
+      try {
+        // const token = localStorage.getItem("token");
+        // if (!token) {
+        //   // console.log("User is unauthorized (token is NULL)");
+        //   return;
+        // }
+        const response = await fetch(siteUrl + ':5000/api/auth/check-login', {
+          method: 'GET',
+          credentials: 'include',
+        });
+        if (response.ok) {
+          const data = await response.json();
+          const { givenName, surname } = data;
+          const fullName = `${surname} ${givenName}`;
+          const encodedFullName = encodeURIComponent(fullName);
+          navigate(`/LecturerPlan/${encodedFullName}`);
         }
-      };
+      } catch (error) {
+        console.log(error);
+      }
+    };
 
-      checkLoginStatus();
-    }, [navigate]);
+    checkLoginStatus();
+  }, [navigate]);
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -52,7 +52,7 @@ export default function LoginPanel() {
 
       if (response.ok) {
         const data = await response.json();
-        const { givenName, surname, title } = data;
+        const { givenName, surname } = data;
         const fullName = `${surname} ${givenName}`;
         const encodedFullName = encodeURIComponent(fullName);
         navigate(`/LecturerPlan/${encodedFullName}`);

@@ -9,7 +9,7 @@ const DeviceForm = () => {
   const handleSubmit = async (e: any) => {
     e.preventDefault();
     try {
-      const response = await axios.post(siteUrl + ':5000/api/devices', {
+      await axios.post(siteUrl + ':5000/api/devices', {
         deviceName,
         deviceClassroom,
       });
